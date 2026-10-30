@@ -1,8 +1,5 @@
-import { createHash } from "node:crypto";
 import type { NextRequest } from "next/server";
 import type { z } from "zod";
-import { db } from "@/db";
-import { enquiries } from "@/db/schema";
 import { rateLimit } from "@/lib/rate-limit";
 import { fieldErrors } from "@/lib/validation";
 import { sendEnquiryNotification } from "@/lib/email";
@@ -19,21 +16,16 @@ function clientIp(req: NextRequest): string {
   return req.headers.get("x-real-ip") ?? "unknown";
 }
 
-function hashIp(ip: string): string {
-  return createHash("sha256").update(`${ip}:${process.env.DATABASE_URL ? "samridhi" : ""}`).digest("hex");
-}
-
 interface HandlerConfig<S extends z.ZodType> {
   kind: "contact" | "distributor";
   schema: S;
-  buildPayload: (data: z.infer<S>) => Record<string, unknown>;
   buildEmailText: (data: z.infer<S>) => string;
 }
 
 /**
  * Shared, hardened handler for both enquiry endpoints:
  * JSON-only → honeypot → time-trap → per-IP rate limit → zod validation →
- * DB persistence → optional e-mail notification.
+ * e-mail notification.
  */
 export async function handleEnquiry<S extends z.ZodType>(
   req: NextRequest,
@@ -108,38 +100,36 @@ export async function handleEnquiry<S extends z.ZodType>(
   };
 
   try {
-    await db.insert(enquiries).values({
-      kind: config.kind,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      message: data.message || "—",
-      payload: config.buildPayload(data),
-      consent: true,
-      ipHash: hashIp(ip),
+    const notification = await sendEnquiryNotification({
+      subject: `New ${config.kind} enquiry — ${data.name}`,
+      text: config.buildEmailText(data),
     });
+
+    if (!notification.sent) {
+      return Response.json(
+        {
+          ok: false,
+          message: "Enquiries are temporarily unavailable. Please try again later.",
+        },
+        { status: 503 },
+      );
+    }
   } catch (error) {
-    console.error("[enquiry] Failed to persist enquiry:", error);
+    console.error("[enquiry] Failed to deliver enquiry:", error);
     return Response.json(
       {
         ok: false,
-        message:
-          "We could not save your enquiry just now. Please try again in a few minutes.",
+        message: "Enquiries are temporarily unavailable. Please try again later.",
       },
-      { status: 500 },
+      { status: 503 },
     );
   }
-
-  await sendEnquiryNotification({
-    subject: `New ${config.kind} enquiry — ${data.name}`,
-    text: config.buildEmailText(data),
-  });
 
   return Response.json(
     {
       ok: true,
       message:
-        "Thank you — your enquiry has been received. The team will review it and respond to genuine requests.",
+        "Thank you — your enquiry has been sent to the team.",
     },
     { status: 200 },
   );

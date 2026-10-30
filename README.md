@@ -6,7 +6,7 @@ and nutraceutical products under the registered Samridhi brand (Trade Mark № 4
 Class 5).
 
 Built with **Next.js (App Router) · React 19 · TypeScript · Tailwind CSS v4 ·
-PostgreSQL via Drizzle ORM · Framer Motion · Zod · Lucide**.
+Framer Motion · Zod · Lucide**.
 
 ---
 
@@ -47,25 +47,16 @@ npm run dev        # http://localhost:3000
 ### Environment variables (`.env`)
 
 ```env
-# Required
-DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/app_db
-
 # Canonical origin used for canonical URLs, sitemap, robots.txt, JSON-LD
 NEXT_PUBLIC_SITE_URL=https://www.example.com
 
-# Optional — email notifications for enquiries.
-# Without these, enquiries are still stored in PostgreSQL; no notification is sent.
+# Required for contact and distributor enquiry submissions.
+# Enquiry data is emailed only and is not stored by the website.
 CONTACT_EMAIL=
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_USER=
 SMTP_PASSWORD=
-```
-
-Apply the database schema:
-
-```bash
-npx drizzle-kit push
 ```
 
 ## 3. Production build & deployment
@@ -77,13 +68,10 @@ npm run start
 
 Deployment notes:
 
-1. Provision PostgreSQL and set `DATABASE_URL`.
-2. Run `npx drizzle-kit push` once to create the `enquiries`/`products` tables.
-3. Set `NEXT_PUBLIC_SITE_URL` to the production domain **before** launching so
+1. Set `NEXT_PUBLIC_SITE_URL` to the production domain **before** launching so
    canonical tags, the sitemap and JSON-LD point to the right origin.
-4. Configure SMTP variables if the company wants email notifications; submissions
-   work and are persisted either way. Email delivery must be tested with the real
-   credentials before being announced to the client as working.
+2. Configure and test SMTP variables before enabling contact and distributor
+  enquiries. Submissions are accepted only after the notification email is sent.
 
 ## 4. Security & form handling
 
@@ -92,9 +80,8 @@ Both enquiry endpoints (`/api/contact`, `/api/distributor-enquiry`) implement:
 * JSON-only content-type guard
 * server-side **Zod** validation with field-level error responses
 * honeypot field + minimum fill-time trap
-* per-IP sliding-window rate limiting (5 / 10 min)
-* one-way SHA-256 hashing of requester IPs (raw IPs are never stored)
-* Drizzle persistence into the `enquiries` table, optional SMTP notification
+* per-IP in-memory sliding-window rate limiting (5 / 10 min)
+* SMTP email delivery; submissions are not persisted by the website
 
 ## 5. Project structure
 
@@ -107,13 +94,9 @@ src/
   components/             # header, footer, forms, explorer, accordion, …
   lib/                    # site config, product catalogue (source of truth),
                           # validation schemas, rate limiter, email, SEO helpers
-  db/                     # Drizzle client + schema (enquiries, products-readiness)
 ```
 
-The `products` DB table mirrors the catalogue shape so a future **admin
-dashboard** (authentication, product CRUD, enquiry review) can be added without
-restructuring the public site. It is intentionally out of scope until secure
-authentication is configured — no fake login ships with this codebase.
+Enquiry submissions are delivered by email and are not stored in a database.
 
 ## 6. Missing information — client must supply
 
@@ -137,7 +120,7 @@ authentication is configured — no fake login ships with this codebase.
 
 | Integration | Purpose | Variables | Behaviour when unset |
 | --- | --- | --- | --- |
-| SMTP email | Notify team of new enquiries | `CONTACT_EMAIL`, `SMTP_*` | Enquiries persist in PostgreSQL only |
+| SMTP email | Deliver new enquiries to the team | `CONTACT_EMAIL`, `SMTP_*` | Enquiry endpoints return unavailable; no data is stored |
 
 ## 9. Final pre-launch checklist for the client
 

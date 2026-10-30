@@ -1,12 +1,8 @@
 import nodemailer from "nodemailer";
 
 /**
- * Optional e-mail notification for new enquiries.
- *
- * Delivery activates only when SMTP configuration is present. Until real
- * credentials are supplied, submissions are still persisted to the database
- * and this function no-ops with a log line — the site never claims that
- * e-mail delivery works before it has been tested with valid configuration.
+ * Deliver new enquiries by email. Submissions are accepted only after SMTP
+ * delivery succeeds; no enquiry data is stored by the website.
  *
  * Required environment variables:
  *   CONTACT_EMAIL   — recipient address for notifications
@@ -28,9 +24,7 @@ export async function sendEnquiryNotification(input: {
   text: string;
 }): Promise<{ sent: boolean }> {
   if (!smtpConfigured()) {
-    console.info(
-      "[email] SMTP not configured — enquiry stored in database only. Set CONTACT_EMAIL and SMTP_* to enable notifications.",
-    );
+    console.info("[email] SMTP not configured — enquiry was not accepted.");
     return { sent: false };
   }
 
@@ -53,8 +47,6 @@ export async function sendEnquiryNotification(input: {
     });
     return { sent: true };
   } catch (error) {
-    // Never fail the submission because a notification could not be sent —
-    // the enquiry is already persisted. Operators should watch the logs.
     console.error("[email] Failed to send enquiry notification:", error);
     return { sent: false };
   }

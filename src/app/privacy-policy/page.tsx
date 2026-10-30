@@ -76,13 +76,13 @@ export default function PrivacyPolicyPage() {
         marketing purposes.
       </p>
 
-      <h2>How enquiries are stored</h2>
+      <h2>How enquiries are handled</h2>
       <p>
-        Submissions are stored in a database accessible to the website operators. If
-        e-mail notifications are configured, a copy of your enquiry is also sent to
-        the company&rsquo;s designated mailbox. Records are kept for as long as
-        needed to handle the enquiry and for a reasonable period afterwards for
-        record-keeping, after which they are deleted or anonymised.
+        The website does not store enquiry submissions. When e-mail delivery is
+        available, your submission is sent to the company&rsquo;s designated mailbox.
+        If delivery is unavailable, the form will ask you to try again later. The
+        company&rsquo;s mailbox and e-mail provider may retain messages according to
+        their own policies.
       </p>
 
       <h2>Security</h2>

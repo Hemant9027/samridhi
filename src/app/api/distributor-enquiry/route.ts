@@ -9,13 +9,6 @@ export async function POST(req: NextRequest) {
   return handleEnquiry(req, {
     kind: "distributor",
     schema: distributorSchema,
-    buildPayload: (d: DistributorInput) => ({
-      businessName: d.businessName,
-      city: d.city,
-      state: d.state,
-      businessType: d.businessType,
-      productInterests: d.productInterests,
-    }),
     buildEmailText: (d: DistributorInput) =>
       [
         `Name: ${d.name}`,

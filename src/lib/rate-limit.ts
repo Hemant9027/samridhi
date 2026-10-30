@@ -1,7 +1,7 @@
 /**
  * Minimal in-memory sliding-window rate limiter, suitable for a single
  * deployment instance. For multi-instance deployments swap the Map for a
- * shared store (Redis, database table, etc.).
+ * shared store (for example, Redis).
  */
 
 interface Bucket {

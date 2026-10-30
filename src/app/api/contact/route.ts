@@ -9,7 +9,6 @@ export async function POST(req: NextRequest) {
   return handleEnquiry(req, {
     kind: "contact",
     schema: contactSchema,
-    buildPayload: (d: ContactInput) => ({ enquiryType: d.enquiryType }),
     buildEmailText: (d: ContactInput) =>
       [
         `Name: ${d.name}`,
